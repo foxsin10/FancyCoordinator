@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresentable>: CoordinatorRepresentable {
+public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresentable>: CoordinatorRepresentable where Parent.Scene == Child.Scene {
     @usableFromInline
     let parent: Parent
 
@@ -16,6 +16,9 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
 
     @usableFromInline
     let toChildRoute: (Parent.Route) -> Child.Route?
+
+    @usableFromInline
+    let toChildContext: (Parent.Context) -> Child.Context
 
     @usableFromInline
     let file: StaticString
@@ -31,6 +34,7 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
         parent: Parent,
         child: Child,
         toChildRoute: @escaping (Parent.Route) -> Child.Route?,
+        toChildContext: @escaping (Parent.Context) -> Child.Context,
         file: StaticString,
         fileID: StaticString,
         line: UInt
@@ -38,18 +42,19 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
         self.parent = parent
         self.child = child
         self.toChildRoute = toChildRoute
+        self.toChildContext = toChildContext
         self.file = file
         self.fileID = fileID
         self.line = line
     }
 
     @inlinable
-    public func coordinate(to route: Parent.Route, withContext context: Child.Context) -> Child.Scene? {
+    public func coordinate(to route: Parent.Route, withContext context: Parent.Context) -> Child.Scene? {
         guard let childRoute = toChildRoute(route) else {
-            return nil
+            return parent.coordinate(to: route, withContext: context)
         }
 
-        return child.coordinate(to: childRoute, withContext: context)
+        return child.coordinate(to: childRoute, withContext: toChildContext(context))
     }
 }
 
@@ -60,11 +65,12 @@ extension CoordinatorRepresentable {
         file: StaticString = #file,
         fileID: StaticString = #fileID,
         line: UInt = #line
-    ) -> some CoordinatorRepresentable<Route, C.Scene, C.Context> {
+    ) -> some CoordinatorRepresentable<Route, C.Scene, C.Context> where C.Context == Context, C.Scene == Scene {
         FancyCoordinator.IfLet(
             parent: self,
             child: wrapped(),
             toChildRoute: toChildeRoute,
+            toChildContext: { $0 },
             file: file,
             fileID: fileID,
             line: line
