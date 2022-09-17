@@ -31,7 +31,7 @@ let package = Package(
         ),
         .testTarget(
             name: "FancyCoordinatorTests",
-            dependencies: ["FancyCoordinator"]
+            dependencies: ["FancyCoordinator", "FancyCoordinatorWithCasePath"]
         ),
 
         .target(

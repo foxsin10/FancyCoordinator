@@ -6,7 +6,11 @@
 //
 
 import XCTest
-@testable import FancyCoordinator
+
+import CasePaths
+
+import FancyCoordinator
+import FancyCoordinatorWithCasePath
 
 @MainActor
 final class FancyCoodinatorTests: XCTestCase {
@@ -48,7 +52,13 @@ final class FancyCoodinatorTests: XCTestCase {
             let coordinator = OptionCoordinator(flag: flag)
             let scene = coordinator.coordinate(to: .option)
 
-            XCTAssertEqual(flag, scene == .optionScene, "scene should be determined by flag, scene: \(scene.debugHash), flag: \(flag)")
+            if let scene {
+                XCTAssertEqual(flag, scene == .optionScene, "scene should be determined by flag, scene: \(scene), flag: \(flag)")
+            } else {
+                if flag {
+                    XCTFail("expect get a scene with Route.option, found nil")
+                }
+            }
         }
     }
 
@@ -57,7 +67,7 @@ final class FancyCoodinatorTests: XCTestCase {
             enum Route {
                 case showLogin
                 case welcome
-                case random
+                case random(RandomCoordinator.Route)
             }
 
             enum Scene: Hashable {
@@ -87,10 +97,12 @@ final class FancyCoodinatorTests: XCTestCase {
             }
 
             struct RandomCoordinator: CoordinatorRepresentable {
+                enum Route {
+                    case random
+                }
                 func coordinate(to route: Route, withContext _: Void) -> Scene? {
                     switch route {
                     case .random: return .randomScene
-                    default: return nil
                     }
                 }
             }
@@ -100,26 +112,24 @@ final class FancyCoodinatorTests: XCTestCase {
                     LoginCoordinator()
                     WelcomeCoordinator()
                 }
-                .ifLet { route in
-                    switch route {
-                    case .showLogin: return .random
-                    default: return nil
-                    }
-                } then: { RandomCoordinator() }
+                .ifLet(/Route.random) {
+                    RandomCoordinator()
+                }
             }
         }
 
-        let scene = ComboCoordinator().coordinate(to: .showLogin)
-        XCTAssert(scene == .randomScene, "scene should be randomScene, found scene: \(scene.debugHash)")
+        let combo = ComboCoordinator()
+        let scene = combo.coordinate(to: .showLogin)
+        if let scene {
+            XCTAssert(scene == .loginScene, "scene should be loginScene, found scene: \(scene))")
+        }
+
+        let randomwScene = combo.coordinate(to: .random(.random))
+        if let randomwScene {
+            XCTAssert(randomwScene == .randomScene, "expect to get \(ComboCoordinator.Scene.randomScene)")
+        }
     }
 }
-
-extension Optional where Wrapped: Hashable {
-    fileprivate var debugHash: Int {
-        self?.hashValue ?? -10
-    }
-}
-
 
 private struct RootCoordinator: CoordinatorRepresentable {
     enum Scene {
@@ -200,25 +210,12 @@ private struct RootCoordinator: CoordinatorRepresentable {
                 }
 
             FeatureA()
-                .ifLet { route in
-                    switch route {
-                    case let .featureA(route): return route
-                    default: return nil
-                    }
-                } then: {
+                .ifLet(/Route.featureA) {
                     Feature()
                 }
 
-            Scoped(
-                { route in
-                    switch route {
-                    case let .featureB(f):
-                        return f
-                    default: return nil
-                    }
-                }
-            ) {
-                Feature()
+            Scoped(/Route.featureB) {
+                    Feature()
             }
         }
 
