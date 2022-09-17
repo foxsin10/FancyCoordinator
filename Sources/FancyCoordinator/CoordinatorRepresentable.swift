@@ -19,7 +19,7 @@ public protocol CoordinatorRepresentable<Route, Scene, Context> {
 
     @CoordinatorBuilder<Route, Scene, Context>
     @MainActor
-    var stack: Stack { get }
+    var stack: Self.Stack { get }
 }
 
 extension CoordinatorRepresentable where Stack == Never {
@@ -42,3 +42,16 @@ extension CoordinatorRepresentable where Context == Void {
         coordinate(to: route, withContext: ())
     }
 }
+
+import SwiftUI
+
+extension CoordinatorRepresentable where Scene: View {
+    @ViewBuilder
+    @MainActor
+    public func buildView(for route: Route, withContext context: Context) -> some View {
+        if let view = coordinate(to: route, withContext: context) {
+            view
+        }
+    }
+}
+
