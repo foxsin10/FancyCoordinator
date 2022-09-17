@@ -41,9 +41,5 @@ let package = Package(
                 .product(name: "CasePaths", package: "swift-case-paths"),
             ]
         ),
-        .testTarget(
-            name: "iOSExampleTests",
-            dependencies: ["FancyCoordinator", "FancyCoordinatorWithCasePath"]
-        ),
     ]
 )
