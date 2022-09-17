@@ -30,7 +30,7 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
     let line: UInt
 
     @inlinable
-    init(
+    public init(
         parent: Parent,
         child: Child,
         toChildRoute: @escaping (Parent.Route) -> Child.Route?,
