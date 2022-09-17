@@ -98,8 +98,7 @@ extension AppCoordinator {
 
         case let .modal(animated, completion):
             let modalNavigationController = UINavigationController(rootViewController: scene)
-//            presentingViewController.present(modalNavigationController, animated: animated, completion: completion)
-            sceneDelegate?.window?.rootViewController?.present(modalNavigationController, animated: animated, completion: completion)
+            presentingViewController.present(modalNavigationController, animated: animated, completion: completion)
 
         case let .custom(transitioningDelegate):
             scene.modalPresentationStyle = .custom
