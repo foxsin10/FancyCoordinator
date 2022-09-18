@@ -1,16 +1,15 @@
-//
-//  Coordinator.swift
-//  SwiftUIExample
-//
-//  Created by yzj on 2022/9/17.
-//
-
 import SwiftUI
+import XCTest
 
 import CasePaths
 
 import FancyCoordinator
 import FancyCoordinatorWithCasePath
+
+@MainActor
+final class SwiftUITests: XCTestCase {}
+
+// MARK: - RootCoordinator
 
 final class Root: CoordinatorRepresentable {
     enum Route {
@@ -19,7 +18,7 @@ final class Root: CoordinatorRepresentable {
     }
 
 //     typealias Scene = ???
-//    var stack: some CoordinatorRepresentable<Route, some Group<some View>, Void> {
+//    var stack: some CoordinatorRepresentable<Route, Group<some View>, Void> {
 //        Scoped(/Route.home) {
 //            HomeCoordinator()
 //        }
@@ -30,30 +29,36 @@ final class Root: CoordinatorRepresentable {
 //    }
 
     func coordinate(to route: Route, withContext context: Void) -> Group<some View>? {
-        @ViewBuilder
-        func buildView(for route: Route) -> some View {
-            switch route {
-            case .home:
-                Scoped(/Route.home) {
-                    HomeCoordinator()
-                }
-                .coordinate(to: route, withContext: context)
+         Group {
+             switch route {
+             case .home:
+                 Scoped(/Route.home) {
+                     HomeCoordinator()
+                 }
+                 .coordinate(to: route, withContext: context)
 
-            case .me:
-                Scoped(/Route.me) {
-                    MeCoordinator()
-                }
-                .coordinate(to: route, withContext: context)
-            }
-        }
+             case .me:
+                 Scoped(/Route.me) {
+                     MeCoordinator()
+                 }
+                 .coordinate(to: route, withContext: context)
+             }
 
-        let view = buildView(for: route)
-
-        return Group {
-            view
+//             Combined {
+//                 Scoped(/Route.home) {
+//                     HomeCoordinator()
+//                 }
+//
+//                 Scoped(/Route.me) {
+//                     MeCoordinator()
+//                 }
+//             }
+//             .coordinate(to: route)
         }
     }
 }
+
+// MARK: - MeCoordinator
 
 struct MeCoordinator: CoordinatorRepresentable {
     enum Route {
@@ -62,21 +67,24 @@ struct MeCoordinator: CoordinatorRepresentable {
     }
 
     func coordinate(to route: Route, withContext context: Void) -> Group<some View>? {
-        @ViewBuilder
-        func buildView(for route: Route) -> some View {
+        Group {
             switch route {
             case .root:
                 VStack {
-                    Button("tap me") {}
+                    Button("Me root") {}
+
                     Color.orange
-                    Spacer()
                 }
+                .background(Color.mint.ignoresSafeArea())
                 .containerShape(Rectangle())
 
             case .profile:
                 VStack {
                     ZStack {
-                        Text("131")
+                        Color.white
+                        Text("Me profile")
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
                     }
 
                     Spacer()
@@ -84,32 +92,25 @@ struct MeCoordinator: CoordinatorRepresentable {
                 .containerShape(Rectangle())
             }
         }
-
-        let view = buildView(for: route)
-
-        return Group {
-            view
-        }
     }
 }
 
-struct HomeCoordinator {
+// MARK: - HomeCoordinator
+
+struct HomeCoordinator: CoordinatorRepresentable {
     enum Route {
         case root
         case fun
     }
-}
 
-extension HomeCoordinator: CoordinatorRepresentable {
     func coordinate(to route: Route, withContext _: Void) -> Group<some View>? {
-        @ViewBuilder
-        func buildView(for route: Route) -> some View {
+        Group {
             switch route {
             case .root:
                 VStack {
                     ZStack {
                         Color.cyan
-                            .frame(maxHeight: .infinity)
+                        Text("Home root")
                     }
 
                     Spacer(minLength: 0)
@@ -119,20 +120,16 @@ extension HomeCoordinator: CoordinatorRepresentable {
             case .fun:
                 VStack {
                     HStack {
-                        Text("1314")
+                        Text("Home fun")
                         Button("home fun") {}
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     Spacer()
                 }
+                .background(Color.indigo.ignoresSafeArea())
                 .containerShape(Rectangle())
             }
-        }
-
-        let view = buildView(for: route)
-
-        return Group {
-            view
         }
     }
 }
