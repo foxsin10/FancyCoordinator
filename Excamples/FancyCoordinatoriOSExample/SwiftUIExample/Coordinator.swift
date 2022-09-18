@@ -19,7 +19,7 @@ final class Root: CoordinatorRepresentable {
     }
 
 //     typealias Scene = ???
-//    var stack: some CoordinatorRepresentable<Route, ViewBuilder._ConditionalContent<some View>, Void> {
+//    var stack: some CoordinatorRepresentable<Route, some Group<some View>, Void> {
 //        Scoped(/Route.home) {
 //            HomeCoordinator()
 //        }
@@ -67,12 +67,11 @@ struct MeCoordinator: CoordinatorRepresentable {
             switch route {
             case .root:
                 VStack {
-                    ZStack {
-                        Color.blue
-                    }
-
+                    Button("tap me") {}
+                    Color.orange
                     Spacer()
                 }
+                .containerShape(Rectangle())
 
             case .profile:
                 VStack {
@@ -82,6 +81,7 @@ struct MeCoordinator: CoordinatorRepresentable {
 
                     Spacer()
                 }
+                .containerShape(Rectangle())
             }
         }
 
@@ -109,19 +109,23 @@ extension HomeCoordinator: CoordinatorRepresentable {
                 VStack {
                     ZStack {
                         Color.cyan
+                            .frame(maxHeight: .infinity)
                     }
 
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
+                .containerShape(Rectangle())
 
             case .fun:
                 VStack {
-                    ZStack {
+                    HStack {
                         Text("1314")
+                        Button("home fun") {}
                     }
 
                     Spacer()
                 }
+                .containerShape(Rectangle())
             }
         }
 
