@@ -11,13 +11,19 @@ struct ContentView: View {
     @StateObject var vm = ViewModel()
 
     var body: some View {
-        if let view = vm.coordinator.coordinate(to: vm.route) {
-            view
-                .border(Color.red, width: 2)
-                .onTapGesture {
-                    vm.route = .home(.fun)
+        vm.coordinator
+            .buildView(for: vm.route, withContext: ())
+            .border(Color.red, width: 2)
+            .onTapGesture {
+                withAnimation {
+                    switch vm.route {
+                    case .home(.root): vm.route = .home(.fun)
+                    case .home(.fun): vm.route = .me(.root)
+                    case .me(.root): vm.route = .me(.profile)
+                    case .me(.profile): vm.route = .home(.root)
+                    }
                 }
-        }
+            }
     }
 
     final class ViewModel: ObservableObject {
