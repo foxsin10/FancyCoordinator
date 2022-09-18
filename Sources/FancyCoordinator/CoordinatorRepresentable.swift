@@ -43,6 +43,7 @@ extension CoordinatorRepresentable where Context == Void {
     }
 }
 
+#if canImport(SwiftUI)
 import SwiftUI
 
 extension CoordinatorRepresentable where Scene: View {
@@ -54,4 +55,4 @@ extension CoordinatorRepresentable where Scene: View {
         }
     }
 }
-
+#endif
