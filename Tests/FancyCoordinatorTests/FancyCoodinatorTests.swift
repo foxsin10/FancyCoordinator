@@ -195,17 +195,7 @@ private struct RootCoordinator: CoordinatorRepresentable {
         var stack: some CoordinatorRepresentable<Route, Scene, Void> {
             FeatureA()
             FeatureB()
-                .scoped { route in
-                    switch route {
-                    case let .featureB(r):
-                        if r.id < 10 {
-                            return r
-                        } else {
-                            return nil
-                        }
-                    default: return nil
-                    }
-                } then: {
+                .scoped(/Route.featureB) {
                     Feature()
                 }
 
@@ -215,7 +205,7 @@ private struct RootCoordinator: CoordinatorRepresentable {
                 }
 
             Scoped(/Route.featureB) {
-                    Feature()
+                Feature()
             }
         }
 
