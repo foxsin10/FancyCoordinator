@@ -7,29 +7,32 @@
 
 import Foundation
 
-public struct Scoped<Route, Child: CoordinatorRepresentable>: CoordinatorRepresentable {
-    public typealias Context = Child.Context
+public struct Scoped<Route, Context, Child: CoordinatorRepresentable>: CoordinatorRepresentable {
     public typealias Scene = Child.Scene
 
-    public let toChildeRoute: (Route) -> Child.Route?
+    public let toChildRoute: (Route) -> Child.Route?
+    public let toChildContext: (Context) -> Child.Context?
     public let child: Child
 
     @inlinable
     public init(
         _ toChildRoute: @escaping (Route) -> Child.Route?,
+        toChildContext: @escaping (Context) -> Child.Context?,
         @CoordinatorBuilderOf<Child> then builder: () -> Child
     ) {
-        self.toChildeRoute = toChildRoute
+        self.toChildRoute = toChildRoute
+        self.toChildContext = toChildContext
         self.child = builder()
     }
 
     @inlinable
-    public func coordinate(to route: Route, withContext context: Child.Context) -> Child.Scene? {
-        guard let childRoute = toChildeRoute(route) else {
+    public func coordinate(to route: Route, withContext context: Context) -> Scene? {
+        guard let childRoute = toChildRoute(route),
+              let childContext = toChildContext(context) else {
             return nil
         }
 
-        return child.coordinate(to: childRoute, withContext: context)
+        return child.coordinate(to: childRoute, withContext: childContext)
     }
 }
 
@@ -38,7 +41,7 @@ extension CoordinatorRepresentable {
     public func scoped(
         _ toChildRoute: @escaping (Route) -> Route?
     ) -> some CoordinatorRepresentable<Route, Scene, Context> {
-        FancyCoordinator.Scoped(toChildRoute) {
+        FancyCoordinator.Scoped(toChildRoute, toChildContext: { $0 }) {
             self
         }
     }
@@ -46,8 +49,9 @@ extension CoordinatorRepresentable {
     @inlinable
     public func scoped<Child: CoordinatorRepresentable>(
         _ toChildRoute: @escaping (Route) -> Child.Route?,
+        toChildContext: @escaping (Context) -> Child.Context?,
         @CoordinatorBuilderOf<Child> then builder: () -> Child
-    ) -> some CoordinatorRepresentable<Route, Child.Scene, Child.Context> {
-        FancyCoordinator.Scoped(toChildRoute, then: builder)
+    ) -> some CoordinatorRepresentable<Route, Child.Scene, Context> {
+        FancyCoordinator.Scoped(toChildRoute, toChildContext: toChildContext, then: builder)
     }
 }
