@@ -49,7 +49,7 @@ extension CoordinatorRepresentable {
         _ casePath: CasePath<Route, Child.Route>,
         context toChildContext: CasePath<Context, Child.Context>,
         @CoordinatorBuilderOf<Child> then builder: () -> Child
-    ) -> some CoordinatorRepresentable<Route, Child.Scene, Context> where Context == Child.Context {
+    ) -> some CoordinatorRepresentable<Route, Child.Scene, Context> {
         FancyCoordinator.Scoped(casePath.extract(from:), toChildContext: toChildContext.extract(from:), then: builder)
     }
 }
