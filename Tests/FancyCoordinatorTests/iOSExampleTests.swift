@@ -129,9 +129,9 @@ extension AppCoordinator {
 }
 
 
-// MARK: - ExcampleController
+// MARK: - ExampleController
 
-final class ExcampleController: UIViewController {
+final class ExampleController: UIViewController {
     let identifier: String
     var onNavigation: () -> Void
 
@@ -197,21 +197,21 @@ struct HomeTimelineCoordinator: CoordinatorRepresentable {
     func coordinate(to route: Route, withContext context: AppCoordinateContext) -> UIViewController? {
         switch route {
         case .root:
-            let controller = ExcampleController(identifier: "\(Route.root)")
+            let controller = ExampleController(identifier: "\(Route.root)")
             controller.onNavigation = { [context, controller] in
                 context.coordinate(to: .homeTimeline(.collectionDetail), from: controller, useTransition: .show)
             }
             return controller
 
         case .collectionDetail:
-            let controller = ExcampleController(identifier: "\(Route.collectionDetail)")
+            let controller = ExampleController(identifier: "\(Route.collectionDetail)")
             controller.onNavigation = { [context, controller] in
                 context.coordinate(to: .homeTimeline(.collectibleDetail), from: controller, useTransition: .show)
             }
             return controller
 
         case .collectibleDetail:
-            let controller = ExcampleController(identifier: "\(Route.collectibleDetail)")
+            let controller = ExampleController(identifier: "\(Route.collectibleDetail)")
             return controller
         }
     }
@@ -227,7 +227,7 @@ struct WelcomeCoordinator: CoordinatorRepresentable {
     func coordinate(to route: Route, withContext _: AppCoordinateContext) -> UIViewController? {
         switch route {
         case .root:
-            let controller = ExcampleController(identifier: "\(Route.root)")
+            let controller = ExampleController(identifier: "\(Route.root)")
             return controller
         }
     }
@@ -245,21 +245,21 @@ struct WalletCoordinator: CoordinatorRepresentable {
     func coordinate(to route: Route, withContext context: AppCoordinateContext) -> UIViewController? {
         switch route {
         case .selectWallet:
-            let controller = ExcampleController(identifier: "\(Route.selectWallet)")
+            let controller = ExampleController(identifier: "\(Route.selectWallet)")
             controller.onNavigation = { [context, controller] in
                 context.coordinate(to: .walletConnect(.showQRCode), from: controller, useTransition: .show)
             }
             return controller
 
         case .showQRCode:
-            let controller = ExcampleController(identifier: "\(Route.showQRCode)")
+            let controller = ExampleController(identifier: "\(Route.showQRCode)")
             controller.onNavigation = { [context, controller] in
                 context.coordinate(to: .walletConnect(.connecting), from: controller, useTransition: .show)
             }
             return controller
 
         case .connecting:
-            let controller = ExcampleController(identifier: "\(Route.connecting)")
+            let controller = ExampleController(identifier: "\(Route.connecting)")
             return controller
         }
     }
