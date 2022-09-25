@@ -14,11 +14,9 @@ public protocol CoordinatorRepresentable<Route, Scene, Context> {
 
     associatedtype Stack
 
-    @MainActor
     func coordinate(to route: Route, withContext context: Context) -> Scene?
 
     @CoordinatorBuilder<Route, Scene, Context>
-    @MainActor
     var stack: Self.Stack { get }
 }
 
@@ -30,14 +28,12 @@ extension CoordinatorRepresentable where Stack == Never {
 }
 
 extension CoordinatorRepresentable where Stack: CoordinatorRepresentable, Stack.Scene == Scene, Stack.Route == Route, Stack.Context == Context {
-    @MainActor
     public func coordinate(to route: Route, withContext context: Context) -> Scene? {
         stack.coordinate(to: route, withContext: context)
     }
 }
 
 extension CoordinatorRepresentable where Context == Void {
-    @MainActor
     public func coordinate(to route: Route) -> Scene? {
         coordinate(to: route, withContext: ())
     }
