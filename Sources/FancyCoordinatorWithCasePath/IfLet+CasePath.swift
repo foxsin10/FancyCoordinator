@@ -37,11 +37,11 @@ extension CoordinatorRepresentable {
     @inlinable
     public func ifLet<C: CoordinatorRepresentable>(
         _ casePath: CasePath<Route, C.Route>,
-        @CoordinatorBuilderOf<C> then wrapped: () -> C,
+        @CoordinatorBuilder<C.Route, C.Scene, C.Context> then wrapped: () -> C,
         file: StaticString = #file,
         fileID: StaticString = #fileID,
         line: UInt = #line
-    ) -> some CoordinatorRepresentable<Route, C.Scene, C.Context> where C.Context == Context, C.Scene == Scene {
+    ) -> some CoordinatorRepresentable<Route, Scene, Context> where C.Context == Context, C.Scene == Scene {
         FancyCoordinator.IfLet(
             parent: self,
             child: wrapped(),

@@ -59,13 +59,13 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
 }
 
 extension CoordinatorRepresentable {
-    public func ifLet<C: CoordinatorRepresentable>(
+    public func ifLet<ChildRoute, ChildScene, ChildContext, C: CoordinatorRepresentable>(
         _ toChildeRoute: @escaping (Route) -> C.Route?,
-        @CoordinatorBuilderOf<C> then wrapped: () -> C,
+        @CoordinatorBuilder<ChildRoute, ChildScene, ChildContext> then wrapped: () -> C,
         file: StaticString = #file,
         fileID: StaticString = #fileID,
         line: UInt = #line
-    ) -> some CoordinatorRepresentable<Route, C.Scene, C.Context> where C.Context == Context, C.Scene == Scene {
+    ) -> some CoordinatorRepresentable<Route, Scene, Context> where Scene == C.Scene, C.Context == Context {
         FancyCoordinator.IfLet(
             parent: self,
             child: wrapped(),
