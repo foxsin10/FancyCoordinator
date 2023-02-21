@@ -7,26 +7,34 @@
 
 import Foundation
 
-public struct Scoped<Route, Context, Child: CoordinatorRepresentable>: CoordinatorRepresentable {
-    public typealias Scene = Child.Scene
-
-    public let toChildRoute: (Route) -> Child.Route?
-    public let toChildContext: (Context) -> Child.Context?
+public struct Scoped<
+    ParentRoute,
+    ParentScene,
+    ParentContext,
+    Child: CoordinatorRepresentable
+>: CoordinatorRepresentable
+    where ParentScene == Child.Scene {
+    public let toChildRoute: (ParentRoute) -> Child.Route?
+    public let toChildContext: (ParentContext) -> Child.Context?
     public let child: Child
 
     @inlinable
-    public init(
-        _ toChildRoute: @escaping (Route) -> Child.Route?,
-        toChildContext: @escaping (Context) -> Child.Context?,
-        @CoordinatorBuilderOf<Child> then builder: () -> Child
-    ) {
+    public init<ChildRoute, ChildContext>(
+        toChildRoute: @escaping (ParentRoute) -> ChildRoute?,
+        toChildContext: @escaping (ParentContext) -> ChildContext?,
+        @CoordinatorBuilder<ChildRoute, ParentScene, ChildContext> then builder: () -> Child
+    )
+        where
+        ChildRoute == Child.Route,
+        ChildContext == Child.Context
+    {
         self.toChildRoute = toChildRoute
         self.toChildContext = toChildContext
-        self.child = builder()
+        child = builder()
     }
 
     @inlinable
-    public func coordinate(to route: Route, withContext context: Context) -> Scene? {
+    public func coordinate(to route: ParentRoute, withContext context: ParentContext) -> ParentScene? {
         guard let childRoute = toChildRoute(route),
               let childContext = toChildContext(context) else {
             return nil
@@ -41,17 +49,27 @@ extension CoordinatorRepresentable {
     public func scoped(
         _ toChildRoute: @escaping (Route) -> Route?
     ) -> some CoordinatorRepresentable<Route, Scene, Context> {
-        FancyCoordinator.Scoped(toChildRoute, toChildContext: { $0 }) {
-            self
-        }
+        FancyCoordinator.Scoped(
+            toChildRoute: toChildRoute,
+            toChildContext: { .some($0) },
+            then: { self }
+        )
     }
 
     @inlinable
-    public func scoped<Child: CoordinatorRepresentable>(
-        _ toChildRoute: @escaping (Route) -> Child.Route?,
-        toChildContext: @escaping (Context) -> Child.Context?,
-        @CoordinatorBuilderOf<Child> then builder: () -> Child
-    ) -> some CoordinatorRepresentable<Route, Child.Scene, Context> {
-        FancyCoordinator.Scoped(toChildRoute, toChildContext: toChildContext, then: builder)
+    public func scoped<ChildRoute, ChildContext, Child: CoordinatorRepresentable>(
+        toChildRoute: @escaping (Route) -> ChildRoute?,
+        toChildContext: @escaping (Context) -> ChildContext?,
+        @CoordinatorBuilder<ChildRoute, Scene, ChildContext> then builder: () -> Child
+    ) -> some CoordinatorRepresentable<Route, Scene, Context>
+        where
+        Scene == Child.Scene,
+        ChildRoute == Child.Route,
+        ChildContext == Child.Context {
+        FancyCoordinator.Scoped(
+            toChildRoute: toChildRoute,
+            toChildContext: toChildContext,
+            then: builder
+        )
     }
 }

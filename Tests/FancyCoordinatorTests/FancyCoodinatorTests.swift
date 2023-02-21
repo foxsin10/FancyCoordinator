@@ -68,18 +68,22 @@ final class FancyCoodinatorTests: XCTestCase {
                 case showLogin
                 case welcome
                 case random(RandomCoordinator.Route)
+                case nest(NestCoordinator.Route)
             }
 
             enum Scene: Hashable {
                 case loginScene
                 case welcomScene
                 case randomScene
+                case nestScene
             }
 
-            typealias Context = Void
+            enum Context {
+                case fixNumber(Int)
+            }
 
             struct LoginCoordinator: CoordinatorRepresentable {
-                func coordinate(to route: Route, withContext _: Void) -> Scene? {
+                func coordinate(to route: Route, withContext _: Context) -> Scene? {
                     switch route {
                     case .showLogin: return .loginScene
                     default: return nil
@@ -88,7 +92,7 @@ final class FancyCoodinatorTests: XCTestCase {
             }
 
             struct WelcomeCoordinator: CoordinatorRepresentable {
-                func coordinate(to route: Route, withContext _: Void) -> Scene? {
+                func coordinate(to route: Route, withContext _: Context) -> Scene? {
                     switch route {
                     case .welcome: return .welcomScene
                     default: return nil
@@ -100,17 +104,33 @@ final class FancyCoodinatorTests: XCTestCase {
                 enum Route {
                     case random
                 }
-                func coordinate(to route: Route, withContext _: Void) -> Scene? {
+                func coordinate(to route: Route, withContext _: Context) -> Scene? {
                     switch route {
                     case .random: return .randomScene
                     }
                 }
             }
+            
+            struct NestCoordinator: CoordinatorRepresentable {
+                enum Route {
+                    case number(Int)
+                }
+                func coordinate(to route: Route, withContext context: Int) -> Scene? {
+                    switch route {
+                    case .number:
+                        return .nestScene
+                    }
+                }
+            }
 
-            var stack: some CoordinatorRepresentable<Route, Scene, Void> {
+            var stack: some CoordinatorRepresentable<Route, Scene, Context> {
                 Combined {
                     LoginCoordinator()
                     WelcomeCoordinator()
+                    
+                    Scoped(/Route.nest, context: /Context.fixNumber) {
+                        NestCoordinator()
+                    }
                 }
                 .ifLet(/Route.random) {
                     RandomCoordinator()
@@ -119,14 +139,20 @@ final class FancyCoodinatorTests: XCTestCase {
         }
 
         let combo = ComboCoordinator()
-        let scene = combo.coordinate(to: .showLogin)
+        let scene = combo.coordinate(to: .showLogin, withContext: .fixNumber(1))
         if let scene {
             XCTAssert(scene == .loginScene, "scene should be loginScene, found scene: \(scene))")
         }
 
-        let randomwScene = combo.coordinate(to: .random(.random))
+        let randomwScene = combo.coordinate(to: .random(.random), withContext: .fixNumber(2))
         if let randomwScene {
             XCTAssert(randomwScene == .randomScene, "expect to get \(ComboCoordinator.Scene.randomScene)")
+        }
+        
+        let nestScene = combo.coordinate(to: .nest(.number(2)), withContext: .fixNumber(2))
+        
+        if let nestScene {
+            XCTAssert(nestScene == .nestScene, "expect to get \(ComboCoordinator.Scene.nestScene)")
         }
     }
 }

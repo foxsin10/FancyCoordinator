@@ -160,4 +160,11 @@ extension CoordinatorBuilder {
     }
 }
 
+// MARK: - Deprecated after 0.0.9
+
+@available(
+  *,
+  deprecated,
+  message: "Use 'CoordinatorBuilder<_, _, _>' with explicit 'Route' , 'Context' and 'Scene' generics, instead."
+)
 public typealias CoordinatorBuilderOf<C: CoordinatorRepresentable> = CoordinatorBuilder<C.Route, C.Scene, C.Context>
