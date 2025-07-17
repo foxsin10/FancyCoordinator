@@ -8,47 +8,47 @@
 import Foundation
 
 public protocol CoordinatorRepresentable<Route, Scene, Context> {
-    associatedtype Route
-    associatedtype Scene
-    associatedtype Context
+  associatedtype Route
+  associatedtype Scene
+  associatedtype Context
 
-    associatedtype Stack
+  associatedtype Stack
 
-    func coordinate(to route: Route, withContext context: Context) -> Scene?
+  func coordinate(to route: Route, withContext context: Context) -> Scene?
 
-    @CoordinatorBuilder<Route, Scene, Context>
-    var stack: Self.Stack { get }
+  @CoordinatorBuilder<Route, Scene, Context>
+  var stack: Self.Stack { get }
 }
 
-extension CoordinatorRepresentable where Stack == Never {
-    @_transparent
-    public var stack: Stack {
-        fatalError("\(self) with body refers to never should not call this property directly")
-    }
+public extension CoordinatorRepresentable where Stack == Never {
+  @_transparent
+  var stack: Stack {
+    fatalError("\(self) with body refers to never should not call this property directly")
+  }
 }
 
-extension CoordinatorRepresentable where Stack: CoordinatorRepresentable, Stack.Scene == Scene, Stack.Route == Route, Stack.Context == Context {
-    public func coordinate(to route: Route, withContext context: Context) -> Scene? {
-        stack.coordinate(to: route, withContext: context)
-    }
+public extension CoordinatorRepresentable where Stack: CoordinatorRepresentable, Stack.Scene == Scene, Stack.Route == Route, Stack.Context == Context {
+  func coordinate(to route: Route, withContext context: Context) -> Scene? {
+    stack.coordinate(to: route, withContext: context)
+  }
 }
 
-extension CoordinatorRepresentable where Context == Void {
-    public func coordinate(to route: Route) -> Scene? {
-        coordinate(to: route, withContext: ())
-    }
+public extension CoordinatorRepresentable where Context == Void {
+  func coordinate(to route: Route) -> Scene? {
+    coordinate(to: route, withContext: ())
+  }
 }
 
 #if canImport(SwiftUI)
 import SwiftUI
 
-extension CoordinatorRepresentable where Scene: View {
-    @ViewBuilder
-    @MainActor
-    public func buildView(for route: Route, withContext context: Context) -> some View {
-        if let view = coordinate(to: route, withContext: context) {
-            view
-        }
+public extension CoordinatorRepresentable where Scene: View {
+  @ViewBuilder
+  @MainActor
+  func buildView(for route: Route, withContext context: Context) -> some View {
+    if let view = coordinate(to: route, withContext: context) {
+      view
     }
+  }
 }
 #endif
