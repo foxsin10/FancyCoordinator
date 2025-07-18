@@ -61,6 +61,7 @@ final class AppCoordinateContext {
 @MainActor
 final class AppCoordinator {
   let coordinateContext: AppCoordinateContext
+
   let presentingViewController = UIViewController()
 
   private(set) var cancelableStorage: Set<AnyCancellable> = []

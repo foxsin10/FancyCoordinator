@@ -13,25 +13,31 @@ final class SwiftUITests {}
 
 // MARK: - RootCoordinator
 
-final class Root: CoordinatorRepresentable {
+extension View {
+  func asAnyView() -> AnyView {
+    AnyView(erasing: self)
+  }
+}
+
+final class Root: @preconcurrency CoordinatorRepresentable {
   enum Route {
     case home(HomeCoordinator.Route)
     case me(MeCoordinator.Route)
   }
 
-//     typealias Scene = ???
-//    var stack: some CoordinatorRepresentable<Route, Group<some View>, Void> {
-//        Scoped(/Route.home) {
-//            HomeCoordinator()
-//        }
-//
-//        Scoped(/Route.me) {
-//            MeCoordinator()
-//        }
-//    }
-
-  func coordinate(to route: Route, withContext context: Void) -> Group<some View>? {
-    Group {
+  ///     typealias Scene = ???
+  ///    var stack: some CoordinatorRepresentable<Route, Group<some View>, Void> {
+  ///        Scoped(/Route.home) {
+  ///            HomeCoordinator()
+  ///        }
+  ///
+  ///        Scoped(/Route.me) {
+  ///            MeCoordinator()
+  ///        }
+  ///    }
+  @MainActor
+  func coordinate(to route: Route, withContext context: Void) -> AnyView? {
+    VStack {
       switch route {
       case .home:
         Scoped(/Route.home) {
@@ -46,17 +52,18 @@ final class Root: CoordinatorRepresentable {
         .coordinate(to: route, withContext: context)
       }
 
-//             Combined {
-//                 Scoped(/Route.home) {
-//                     HomeCoordinator()
-//                 }
-//
-//                 Scoped(/Route.me) {
-//                     MeCoordinator()
-//                 }
-//             }
-//             .coordinate(to: route)
+      Combined {
+        Scoped(/Route.home) {
+          HomeCoordinator()
+        }
+
+        Scoped(/Route.me) {
+          MeCoordinator()
+        }
+      }
+      .coordinate(to: route)
     }
+    .asAnyView()
   }
 }
 
@@ -69,8 +76,8 @@ struct MeCoordinator: @preconcurrency CoordinatorRepresentable {
   }
 
   @MainActor
-  func coordinate(to route: Route, withContext _: Void) -> Group<some View>? {
-    Group {
+  func coordinate(to route: Route, withContext _: Void) -> AnyView? {
+    VStack {
       switch route {
       case .root:
         VStack {
@@ -95,6 +102,7 @@ struct MeCoordinator: @preconcurrency CoordinatorRepresentable {
         .containerShape(Rectangle())
       }
     }
+    .asAnyView()
   }
 }
 
@@ -107,8 +115,8 @@ struct HomeCoordinator: @preconcurrency CoordinatorRepresentable {
   }
 
   @MainActor
-  func coordinate(to route: Route, withContext _: Void) -> Group<some View>? {
-    Group {
+  func coordinate(to route: Route, withContext _: Void) -> AnyView? {
+    VStack {
       switch route {
       case .root:
         VStack {
@@ -135,5 +143,6 @@ struct HomeCoordinator: @preconcurrency CoordinatorRepresentable {
         .containerShape(Rectangle())
       }
     }
+    .asAnyView()
   }
 }

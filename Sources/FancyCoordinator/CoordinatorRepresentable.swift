@@ -28,6 +28,8 @@ public extension CoordinatorRepresentable where Stack == Never {
 }
 
 public extension CoordinatorRepresentable where Stack: CoordinatorRepresentable, Stack.Scene == Scene, Stack.Route == Route, Stack.Context == Context {
+  @inlinable
+  @_optimize(none)
   func coordinate(to route: Route, withContext context: Context) -> Scene? {
     stack.coordinate(to: route, withContext: context)
   }
@@ -39,6 +41,7 @@ public extension CoordinatorRepresentable where Context == Void {
   }
 }
 
+public typealias CoordinatorRepresentableOf<Coordinator: CoordinatorRepresentable> = CoordinatorRepresentable<Coordinator.Route, Coordinator.Scene, Coordinator.Context>
 #if canImport(SwiftUI)
 import SwiftUI
 
