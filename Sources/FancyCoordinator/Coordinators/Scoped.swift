@@ -56,20 +56,29 @@ public extension CoordinatorRepresentable {
     )
   }
 
+  /// Routes that `toChildRoute` maps go to `builder`'s child only; every other route goes to `self` only.
+  /// Returns `nil` when the route maps to the child but `toChildContext` does not.
   @inlinable
   func scoped<ChildRoute, ChildContext, Child: CoordinatorRepresentable>(
     toChildRoute: @escaping (Route) -> ChildRoute?,
     toChildContext: @escaping (Context) -> ChildContext?,
-    @CoordinatorBuilder<ChildRoute, Scene, ChildContext> then builder: () -> Child
+    @CoordinatorBuilder<ChildRoute, Scene, ChildContext> then builder: () -> Child,
+    file: StaticString = #file,
+    fileID: StaticString = #fileID,
+    line: UInt = #line
   ) -> some CoordinatorRepresentable<Route, Scene, Context>
     where
     Scene == Child.Scene,
     ChildRoute == Child.Route,
     ChildContext == Child.Context {
-    FancyCoordinator.Scoped(
+    FancyCoordinator.IfLet(
+      parent: self,
+      child: builder(),
       toChildRoute: toChildRoute,
       toChildContext: toChildContext,
-      then: builder
+      file: file,
+      fileID: fileID,
+      line: line
     )
   }
 }

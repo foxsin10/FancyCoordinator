@@ -12,7 +12,40 @@ import SwiftUI
 import UIKit
 
 @MainActor
-final class iOSCoodinatorTests: XCTestCase {}
+final class iOSCoodinatorTests: XCTestCase {
+  func testAppCoordinatorRoutesToFeatureControllers() throws {
+    let context = AppCoordinateContext()
+    let coordinator = AppCoordinator(context: context)
+
+    let home = try XCTUnwrap(coordinator.coordinate(to: .homeTimeline(.root), withContext: context) as? ExampleController)
+    XCTAssertEqual(home.identifier, "root")
+
+    let wallet = try XCTUnwrap(coordinator.coordinate(to: .walletConnect(.showQRCode), withContext: context) as? ExampleController)
+    XCTAssertEqual(wallet.identifier, "showQRCode")
+
+    let welcome = try XCTUnwrap(coordinator.coordinate(to: .welcome(.root), withContext: context) as? ExampleController)
+    XCTAssertEqual(welcome.identifier, "root")
+  }
+
+  func testNavigationSendsNextRoute() throws {
+    let context = AppCoordinateContext()
+    var routes: [AppRoute] = []
+    let cancellable = context.routeSignal.sink { route, _, _ in
+      routes.append(route)
+    }
+    defer { cancellable.cancel() }
+
+    let controller = try XCTUnwrap(
+      HomeTimelineCoordinator().coordinate(to: .root, withContext: context) as? ExampleController
+    )
+    controller.onNavigation()
+
+    XCTAssertEqual(routes.count, 1)
+    guard case .homeTimeline(.collectionDetail) = routes.first else {
+      return XCTFail("expected .homeTimeline(.collectionDetail), got \(String(describing: routes.first))")
+    }
+  }
+}
 
 // MARK: - AppRoute and Transition
 

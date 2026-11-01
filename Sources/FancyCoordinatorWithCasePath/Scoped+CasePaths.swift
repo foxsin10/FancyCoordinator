@@ -45,10 +45,14 @@ public extension Scoped {
 }
 
 public extension CoordinatorRepresentable {
+  /// Routes matching `casePath` go to `builder`'s child only; every other route goes to `self` only.
   @inlinable
   func scoped<ChildeRoute, ChildContext, Child: CoordinatorRepresentable>(
     _ casePath: CasePath<Route, ChildeRoute>,
-    @CoordinatorBuilder<ChildeRoute, Child.Scene, ChildContext> then builder: () -> Child
+    @CoordinatorBuilder<ChildeRoute, Child.Scene, ChildContext> then builder: () -> Child,
+    file: StaticString = #file,
+    fileID: StaticString = #fileID,
+    line: UInt = #line
   ) -> some CoordinatorRepresentable<Route, Scene, Context>
     where
     Context == ChildContext,
@@ -56,18 +60,26 @@ public extension CoordinatorRepresentable {
     ChildeRoute == Child.Route,
     Scene == Child.Scene
   {
-    FancyCoordinator.Scoped<Route, Scene, Context, Child>(
+    scoped(
       toChildRoute: casePath.extract(from:),
-      toChildContext: { $0 },
-      then: builder
+      toChildContext: { .some($0) },
+      then: builder,
+      file: file,
+      fileID: fileID,
+      line: line
     )
   }
 
+  /// Routes matching `casePath` go to `builder`'s child only; every other route goes to `self` only.
+  /// Returns `nil` when the route matches but the context does not match `toChildContext`.
   @inlinable
   func scoped<ChildeRoute, ChildScene, ChildContext, Child: CoordinatorRepresentable>(
     _ casePath: CasePath<Route, Child.Route>,
     context toChildContext: CasePath<Context, Child.Context>,
-    @CoordinatorBuilder<Child.Route, Scene, Child.Context> then builder: () -> Child
+    @CoordinatorBuilder<Child.Route, Scene, Child.Context> then builder: () -> Child,
+    file: StaticString = #file,
+    fileID: StaticString = #fileID,
+    line: UInt = #line
   ) -> some CoordinatorRepresentable<Route, Scene, Context>
     where
     ChildScene == Scene,
@@ -75,10 +87,13 @@ public extension CoordinatorRepresentable {
     ChildContext == Child.Context,
     Scene == Child.Scene
   {
-    FancyCoordinator.Scoped(
+    scoped(
       toChildRoute: casePath.extract(from:),
       toChildContext: toChildContext.extract(from:),
-      then: builder
+      then: builder,
+      file: file,
+      fileID: fileID,
+      line: line
     )
   }
 }

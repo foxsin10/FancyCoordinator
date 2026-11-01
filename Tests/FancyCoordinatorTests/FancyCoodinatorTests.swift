@@ -48,20 +48,8 @@ final class FancyCoodinatorTests {
       }
     }
 
-    let flags = [Bool.random(), Bool.random()]
-
-    for flag in flags {
-      let coordinator = OptionCoordinator(flag: flag)
-      let scene = coordinator.coordinate(to: .option)
-
-      if let scene {
-        #expect(flag == (scene == .optionScene), "scene should be determined by flag, scene: \(scene), flag: \(flag)")
-      } else {
-        if flag {
-          Issue.record("expect get a scene with Route.option, found nil")
-        }
-      }
-    }
+    #expect(OptionCoordinator(flag: true).coordinate(to: .option) == .optionScene)
+    #expect(OptionCoordinator(flag: false).coordinate(to: .option) == nil)
   }
 
   @Test func combinedCoordinator() {
@@ -143,21 +131,275 @@ final class FancyCoodinatorTests {
     }
 
     let combo = ComboCoordinator()
-    let scene = combo.coordinate(to: .showLogin, withContext: .fixNumber(1))
-    if let scene {
-      #expect(scene == .loginScene, "scene should be loginScene, found scene: \(scene))")
+    #expect(combo.coordinate(to: .showLogin, withContext: .fixNumber(1)) == .loginScene)
+    #expect(combo.coordinate(to: .welcome, withContext: .fixNumber(1)) == .welcomScene)
+    #expect(combo.coordinate(to: .random(.random), withContext: .fixNumber(2)) == .randomScene)
+    #expect(combo.coordinate(to: .nest(.number(2)), withContext: .fixNumber(2)) == .nestScene)
+  }
+
+  @Test func ifLetRoutesToChildOrFallsBackToParent() {
+    enum Route {
+      case parent
+      case child(Int)
     }
 
-    let randomwScene = combo.coordinate(to: .random(.random), withContext: .fixNumber(2))
-    if let randomwScene {
-      #expect(randomwScene == .randomScene, "expect to get \(ComboCoordinator.Scene.randomScene)")
+    struct ParentCoordinator: CoordinatorRepresentable {
+      func coordinate(to route: Route, withContext _: Void) -> String? {
+        if case .parent = route { return "parent" }
+        return nil
+      }
     }
 
-    let nestScene = combo.coordinate(to: .nest(.number(2)), withContext: .fixNumber(2))
-
-    if let nestScene {
-      #expect(nestScene == .nestScene, "expect to get \(ComboCoordinator.Scene.nestScene)")
+    struct ChildCoordinator: CoordinatorRepresentable {
+      func coordinate(to id: Int, withContext _: Void) -> String? {
+        "child \(id)"
+      }
     }
+
+    let coordinator = ParentCoordinator().ifLet({ route -> Int? in
+      if case let .child(id) = route { return id }
+      return nil
+    }) {
+      ChildCoordinator()
+    }
+
+    #expect(coordinator.coordinate(to: .parent) == "parent")
+    #expect(coordinator.coordinate(to: .child(7)) == "child 7")
+  }
+
+  @Test func scopedReturnsNilWhenRouteOrContextDoesNotMatch() {
+    enum Route {
+      case user(Int)
+      case settings
+    }
+
+    enum Context {
+      case loggedIn(String)
+      case guest
+    }
+
+    struct ProfileCoordinator: CoordinatorRepresentable {
+      func coordinate(to id: Int, withContext name: String) -> String? {
+        "\(name) #\(id)"
+      }
+    }
+
+    let coordinator = Scoped<Route, String, Context, ProfileCoordinator>(/Route.user, context: /Context.loggedIn) {
+      ProfileCoordinator()
+    }
+
+    #expect(coordinator.coordinate(to: .user(7), withContext: .loggedIn("amy")) == "amy #7")
+    #expect(coordinator.coordinate(to: .user(7), withContext: .guest) == nil)
+    #expect(coordinator.coordinate(to: .settings, withContext: .loggedIn("amy")) == nil)
+  }
+
+  @Test func arrayBuilderReturnsFirstMatchingCoordinator() {
+    struct BelowCoordinator: CoordinatorRepresentable {
+      let limit: Int
+
+      func coordinate(to value: Int, withContext _: Void) -> String? {
+        value < limit ? "below \(limit)" : nil
+      }
+    }
+
+    let coordinator = Combined<Int, String, Void, _> {
+      for limit in [10, 20, 30] {
+        BelowCoordinator(limit: limit)
+      }
+    }
+
+    #expect(coordinator.coordinate(to: 5) == "below 10")
+    #expect(coordinator.coordinate(to: 15) == "below 20")
+    #expect(coordinator.coordinate(to: 35) == nil)
+  }
+
+  @Test func scopedMethodSendsEachRouteToExactlyOneSide() {
+    enum Route {
+      case home
+      case user(Int)
+    }
+
+    enum Context {
+      case loggedIn(String)
+      case guest
+    }
+
+    struct ParentCoordinator: CoordinatorRepresentable {
+      func coordinate(to route: Route, withContext _: Context) -> String? {
+        switch route {
+        case .home: "home"
+        case .user: "parent user"
+        }
+      }
+    }
+
+    struct UserCoordinator: CoordinatorRepresentable {
+      func coordinate(to id: Int, withContext _: Context) -> String? {
+        "user \(id)"
+      }
+    }
+
+    struct ProfileCoordinator: CoordinatorRepresentable {
+      func coordinate(to id: Int, withContext name: String) -> String? {
+        "\(name) #\(id)"
+      }
+    }
+
+    let context = Context.loggedIn("amy")
+
+    // Child-case routes never reach the parent, even though the parent handles `.user`.
+    let casePathScoped = ParentCoordinator().scoped(/Route.user) {
+      UserCoordinator()
+    }
+    #expect(casePathScoped.coordinate(to: .home, withContext: context) == "home")
+    #expect(casePathScoped.coordinate(to: .user(7), withContext: context) == "user 7")
+
+    let contextScoped = ParentCoordinator().scoped(/Route.user, context: /Context.loggedIn) {
+      ProfileCoordinator()
+    }
+    #expect(contextScoped.coordinate(to: .home, withContext: context) == "home")
+    #expect(contextScoped.coordinate(to: .user(7), withContext: context) == "amy #7")
+    #expect(contextScoped.coordinate(to: .user(7), withContext: .guest) == nil)
+
+    let closureScoped = ParentCoordinator().scoped(
+      toChildRoute: { route -> Int? in
+        if case let .user(id) = route { return id }
+        return nil
+      },
+      toChildContext: { context -> String? in
+        if case let .loggedIn(name) = context { return name }
+        return nil
+      }
+    ) {
+      ProfileCoordinator()
+    }
+    #expect(closureScoped.coordinate(to: .home, withContext: context) == "home")
+    #expect(closureScoped.coordinate(to: .user(7), withContext: context) == "amy #7")
+    #expect(closureScoped.coordinate(to: .user(7), withContext: .guest) == nil)
+  }
+
+  @Test func builderSupportsIfElseAvailabilityAndEmptyBlocks() {
+    struct FixedCoordinator: CoordinatorRepresentable {
+      let scene: String
+
+      func coordinate(to _: Int, withContext _: Void) -> String? {
+        scene
+      }
+    }
+
+    struct EitherCoordinator: CoordinatorRepresentable {
+      let flag: Bool
+
+      var stack: some CoordinatorRepresentable<Int, String, Void> {
+        if flag {
+          FixedCoordinator(scene: "first")
+        } else {
+          FixedCoordinator(scene: "second")
+        }
+      }
+    }
+
+    struct AvailabilityCoordinator: CoordinatorRepresentable {
+      var stack: some CoordinatorRepresentable<Int, String, Void> {
+        if #available(iOS 15, macOS 12, watchOS 8, *) {
+          FixedCoordinator(scene: "available")
+        }
+      }
+    }
+
+    #expect(EitherCoordinator(flag: true).coordinate(to: 1) == "first")
+    #expect(EitherCoordinator(flag: false).coordinate(to: 1) == "second")
+    #expect(AvailabilityCoordinator().coordinate(to: 1) == "available")
+    #expect(Combined<Int, String, Void, _> {}.coordinate(to: 1) == nil)
+  }
+
+  @Test func firstMatchingCoordinatorWins() {
+    struct FixedCoordinator: CoordinatorRepresentable {
+      let scene: String?
+
+      func coordinate(to _: Int, withContext _: Void) -> String? {
+        scene
+      }
+    }
+
+    let combined = Combined<Int, String, Void, _> {
+      FixedCoordinator(scene: nil)
+      FixedCoordinator(scene: "second")
+      FixedCoordinator(scene: "third")
+    }
+    #expect(combined.coordinate(to: 1) == "second")
+
+    typealias Builder = CoordinatorBuilder<Int, String, Void>
+
+    let sequenced = Builder.Sequenced(c0: FixedCoordinator(scene: "a"), c1: FixedCoordinator(scene: "b"))
+    #expect(sequenced.coordinate(to: 1) == "a")
+
+    let many = Builder.SequensedMany(coordinators: [FixedCoordinator(scene: nil), FixedCoordinator(scene: "b")])
+    #expect(many.coordinate(to: 1) == "b")
+    #expect(Builder.SequensedMany<FixedCoordinator>(coordinators: []).coordinate(to: 1) == nil)
+
+    #expect(Builder.OptionalCoordinator(wrapped: FixedCoordinator(scene: "a")).coordinate(to: 1) == "a")
+    #expect(Builder.OptionalCoordinator<FixedCoordinator>(wrapped: nil).coordinate(to: 1) == nil)
+  }
+
+  @Test func scopedFilterTransformsRouteForSelf() {
+    struct EchoCoordinator: CoordinatorRepresentable {
+      func coordinate(to route: Int, withContext _: Void) -> String? {
+        "route \(route)"
+      }
+    }
+
+    let coordinator = EchoCoordinator().scoped { $0 > 0 ? $0 * 10 : nil }
+
+    #expect(coordinator.coordinate(to: 3) == "route 30")
+    #expect(coordinator.coordinate(to: -1) == nil)
+  }
+
+  @Test func ifLetWithCasePathRoutesToChildOrFallsBackToParent() {
+    enum Route {
+      case parent
+      case child(Int)
+    }
+
+    struct ParentCoordinator: CoordinatorRepresentable {
+      func coordinate(to route: Route, withContext _: Void) -> String? {
+        switch route {
+        case .parent: "parent"
+        case .child: "parent child"
+        }
+      }
+    }
+
+    struct ChildCoordinator: CoordinatorRepresentable {
+      func coordinate(to id: Int, withContext _: Void) -> String? {
+        "child \(id)"
+      }
+    }
+
+    // An explicit `CasePath` value; `/Route.child` would pick the closure-based `ifLet`.
+    let casePath = CasePath<Route, Int>(Route.child)
+
+    let viaMethod = ParentCoordinator().ifLet(casePath) {
+      ChildCoordinator()
+    }
+    #expect(viaMethod.coordinate(to: .parent) == "parent")
+    #expect(viaMethod.coordinate(to: .child(7)) == "child 7")
+
+    let viaInit = IfLet(
+      parent: ParentCoordinator(),
+      child: ChildCoordinator(),
+      toChildCasePath: casePath,
+      toChildContext: { $0 },
+      file: #file,
+      fileID: #fileID,
+      line: #line
+    )
+    #expect(viaInit.coordinate(to: .parent) == "parent")
+    #expect(viaInit.coordinate(to: .child(7)) == "child 7")
+  }
+
+  @Test func emptyNeverProducesScene() {
+    #expect(Empty<Int, String, Void>().coordinate(to: 1) == nil)
   }
 }
 

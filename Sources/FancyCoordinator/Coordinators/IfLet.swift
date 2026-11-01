@@ -18,7 +18,7 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
   let toChildRoute: (Parent.Route) -> Child.Route?
 
   @usableFromInline
-  let toChildContext: (Parent.Context) -> Child.Context
+  let toChildContext: (Parent.Context) -> Child.Context?
 
   @usableFromInline
   let file: StaticString
@@ -29,12 +29,14 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
   @usableFromInline
   let line: UInt
 
+  /// Routes that `toChildRoute` maps go to `child` only; every other route goes to `parent` only.
+  /// Returns `nil` when the route maps to `child` but `toChildContext` returns `nil`.
   @inlinable
   public init(
     parent: Parent,
     child: Child,
     toChildRoute: @escaping (Parent.Route) -> Child.Route?,
-    toChildContext: @escaping (Parent.Context) -> Child.Context,
+    toChildContext: @escaping (Parent.Context) -> Child.Context?,
     file: StaticString,
     fileID: StaticString,
     line: UInt
@@ -57,7 +59,11 @@ public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresen
       return parent.coordinate(to: route, withContext: context)
     }
 
-    return child.coordinate(to: childRoute, withContext: toChildContext(context))
+    guard let childContext = toChildContext(context) else {
+      return nil
+    }
+
+    return child.coordinate(to: childRoute, withContext: childContext)
   }
 }
 

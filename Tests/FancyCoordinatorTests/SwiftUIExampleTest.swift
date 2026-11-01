@@ -9,7 +9,43 @@ import FancyCoordinatorWithCasePath
 
 @Suite
 @MainActor
-final class SwiftUITests {}
+final class SwiftUITests {
+  @Test func scopedViewCoordinatorOnlyHandlesItsRoutes() {
+    let home = Scoped<Root.Route, AnyView, Void, HomeCoordinator>(/Root.Route.home) {
+      HomeCoordinator()
+    }
+    let me = Scoped<Root.Route, AnyView, Void, MeCoordinator>(/Root.Route.me) {
+      MeCoordinator()
+    }
+
+    #expect(home.coordinate(to: .home(.fun)) != nil)
+    #expect(home.coordinate(to: .me(.root)) == nil)
+    #expect(me.coordinate(to: .me(.profile)) != nil)
+    #expect(me.coordinate(to: .home(.root)) == nil)
+  }
+
+  @Test func buildViewIsEmptyWhenRouteIsNotHandled() {
+    let home = Scoped<Root.Route, AnyView, Void, HomeCoordinator>(/Root.Route.home) {
+      HomeCoordinator()
+    }
+
+    // `buildView` wraps the scene in an optional view; no child means the route was not handled.
+    let handled = Mirror(reflecting: home.buildView(for: .home(.root), withContext: ()))
+    let unhandled = Mirror(reflecting: home.buildView(for: .me(.root), withContext: ()))
+
+    #expect(handled.displayStyle == .optional)
+    #expect(handled.children.count == 1)
+    #expect(unhandled.displayStyle == .optional)
+    #expect(unhandled.children.isEmpty)
+  }
+
+  @Test func rootProducesViewForEveryRoute() {
+    let root = Root()
+
+    #expect(root.coordinate(to: .home(.root)) != nil)
+    #expect(root.coordinate(to: .me(.profile)) != nil)
+  }
+}
 
 // MARK: - RootCoordinator
 
