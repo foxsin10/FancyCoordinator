@@ -87,7 +87,7 @@ public extension CoordinatorBuilder {
     let c1: C1
 
     @inlinable
-    init(c0: C0, c1: C1) {
+    public init(c0: C0, c1: C1) {
       self.c0 = c0
       self.c1 = c1
     }
@@ -111,7 +111,7 @@ public extension CoordinatorBuilder {
     let coordinators: [Element]
 
     @inlinable
-    init(coordinators: [Element]) {
+    public init(coordinators: [Element]) {
       self.coordinators = coordinators
     }
 
@@ -149,7 +149,7 @@ public extension CoordinatorBuilder {
     let wrapped: Wrapped?
 
     @inlinable
-    init(wrapped: Wrapped?) {
+    public init(wrapped: Wrapped?) {
       self.wrapped = wrapped
     }
 
