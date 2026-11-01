@@ -7,6 +7,7 @@
 
 import Foundation
 
+@frozen
 public struct IfLet<Parent: CoordinatorRepresentable, Child: CoordinatorRepresentable>: CoordinatorRepresentable where Parent.Scene == Child.Scene {
   @usableFromInline
   let parent: Parent

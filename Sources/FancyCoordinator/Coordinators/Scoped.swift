@@ -7,6 +7,7 @@
 
 import Foundation
 
+@frozen
 public struct Scoped<
   ParentRoute,
   ParentScene,

@@ -78,6 +78,7 @@ public enum CoordinatorBuilder<Route, Scene, Context> {
 }
 
 public extension CoordinatorBuilder {
+  @frozen
   struct Sequenced<C0: CoordinatorRepresentable, C1: CoordinatorRepresentable>: CoordinatorRepresentable
     where C0.Route == C1.Route, C0.Scene == C1.Scene, C0.Context == C1.Context {
     @usableFromInline
@@ -106,6 +107,7 @@ public extension CoordinatorBuilder {
     }
   }
 
+  @frozen
   struct SequensedMany<Element: CoordinatorRepresentable>: CoordinatorRepresentable {
     @usableFromInline
     let coordinators: [Element]
@@ -143,8 +145,8 @@ public extension CoordinatorBuilder {
     }
   }
 
-  struct OptionalCoordinator<Wrapped: CoordinatorRepresentable>: CoordinatorRepresentable
-    where Route == Wrapped.Route, Scene == Wrapped.Scene, Context == Wrapped.Context {
+  @frozen
+  struct OptionalCoordinator<Wrapped: CoordinatorRepresentable>: CoordinatorRepresentable {
     @usableFromInline
     let wrapped: Wrapped?
 

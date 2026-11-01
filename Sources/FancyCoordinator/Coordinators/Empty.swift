@@ -7,6 +7,7 @@
 
 import Foundation
 
+@frozen
 public struct Empty<Route, Scene, Context>: CoordinatorRepresentable {
   @inlinable
   public init() {}
